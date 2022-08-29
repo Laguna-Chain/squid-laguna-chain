@@ -1,23 +1,54 @@
-## Steps to get the squid processor running for Laguna Chain
-1. Most importantly, you need the Laguna Chain to be running to index it in the first place. So, spin up a Laguna node by navigating to the root folder of the Laguna Chain repo, compile the node and run it:
-* compilation: `cargo build --release'
-* running the actual node: `./target/release/laguna-node --tmp --dev`
-2. Once you get the chain running, make note of the port it is running on-- by default it is 9944.
-3. Expose the RPC url (default: localhost:9944) of the chain to the public to allow access to our chain publicly. For this you need to download a tool like ngrok. Once you have ngrok downloaded on your machine, run: `./ngrok http <CHAIN_PORT_NUMBER> (default: 9944). It returns a an url like `http://<RPC_URL>`
+## Instructions to Setup Subsquid for Laguna Chain
+* Most importantly, you need the Laguna Chain to be running to index it in the first place. So, spin up a Laguna node by navigating to the root folder of the Laguna Chain repo, compile the node and run it:
+    * compilation: `cargo build --release`
+    * running the actual node: `./target/release/laguna-node --tmp --dev`
+* Once you get the chain running, make note of the port it is running on -- by default it uses 9944.
+* Expose the RPC url (default: localhost:9944) of Laguna chain to public as subsquid archive requires access to it. For this you can download a free tool like ngrok and use it for tunnel forwarding. Once you have ngrok downloaded on your machine, run: `./ngrok http <CHAIN_PORT_NUMBER> (default: 9944)`. It returns an url like `http://<RPC_URL>`
 
-### Setting up the Archive
-4. Set the RPC endpoint in the `archive/docker-compose.yml` by replacing the existing endpoint (set to kusama by default in the subsquid-template) with `wss://<RPC_URL>`. Additionally, if you require support to index wasm-contracts, enable it in the `docker-compose.yml (under the gateway key)`. Run the archive: `docker compose -f archive/docker-compose.yml up`. The archive exposes the graphql endpoint on the port `8888` by default. 
+### Setting up the Archive Locally
+* Set the RPC endpoint in the `archive/docker-compose.yml` by replacing the existing endpoint (set to kusama by default in the subsquid-template) with `wss://<RPC_URL>`. Additionally, if you require support to index wasm-contracts, enable it in the `docker-compose.yml (under the gateway key)`. Run the archive: `docker compose -f archive/docker-compose.yml up`. The archive exposes the graphql endpoint on the port `8888` by default. 
+```dockerfile
+// Some code above
+
+ingest:
+    depends_on:
+      - db
+    restart: on-failure
+    image: subsquid/substrate-ingest:firesquid
+    command: [
+       "-e", "wss://0a11-103-171-117-157.in.ngrok.io",
+       
+ // Some code in between
+ 
+  gateway:
+    depends_on:
+      - db
+    image: subsquid/substrate-gateway:firesquid
+    environment:
+      DATABASE_MAX_CONNECTIONS: 5
+      RUST_LOG: "actix_web=info,actix_server=info"
+    command: [
+       "--database-url", "postgres://postgres:postgres@db:5432/squid-archive",
+       # "--evm-support" # uncomment for chains with Frontier EVM pallet
+                         # (e.g. Moonbeam/Moonriver or Astar/Shiden)
+       "--contracts-support"
+       
+   // Some code below
+```
 
 ### Install Dependencies
 * Requisites: Node.js (16 or later), Docker
 * Install core dependencies from the root folder: `npm install && npm update`
 * Install additional dependencies (needed for wasm-indexing): `npm install @subsquid/ink-abi @subsquid/ink-typegen`
+    * `subsquid/ink-abi`: required for reading and accessing the metadata of binary interface of an ink contract
+    * `subsquid/ink-typegen`: responsible for generating some boilerplate code and interfaces necessary to decode event logs, smart contract functions, and executable (binary).
 
-### Setting up the Processor
+### Setting up the Processor Locally
 * Once the archive is running, we can set up the processor. First step would be to define the schema of the events you want to index in the `schema.graphql` file. 
 * Change the archive source url in the `processor.ts` to point to our local Laguna Chain graphql endpoint, which by default by `http://localhost:8888/graphql`. 
 * Add all the events you want to index by adding them to the `SubstrateBatchProcessor` using the method `addEvent()`. For example, if you want to fetch the Transfer events emitted by pallet-balances (generated as `Balances` by construct_runtime!() macro). 
-```Batchfile
+```typescript
+// processor.ts
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
         archive: "http://localhost:8888/graphql"
@@ -28,4 +59,90 @@ const processor = new SubstrateBatchProcessor()
 ```
 * To support wasm-based ink contract indexing, you first need to generate typegen (this will be needed to decode events / messages of a contract fetched by the substrateprocessor) for the contract abi. For example, if you want to index ERC20 ink contracts, save the ERC20 abi file generated by the compiler at the path `src/abi/erc20.json` and run:     
     `npx squid-ink-typegen --abi src/abi/erc20.json --output src/abi/erc20.ts` 
-* All the processor logic concerned with building up the event database goes in the `processor.run(new TypeormDatabase(), async ctx => { /* LOGIC GOES HERE*/})`
+* All the processor logic concerned with building up the event database goes in the `processor.run(new TypeormDatabase(), async ctx => { /* LOGIC GOES HERE*/})`. It is the main entry point whenever new bundle of data arrives from the archive.
+* As the number of events we want to index can keep growing, it makes it easier to read by separating out the filtering logic for each event into its own functions. For example, 
+```typescript
+// processor.ts
+processor.run(new TypeormDatabase(), async ctx => {
+    // this is the main entry point whenever new bundle of data arrives from the archive.
+    
+    let transfersData = getTransfers(ctx);
+    /* OTHER LOGIC TO UPDATE THE DATABASE */
+    }
+)
+
+interface TransferEvent {
+    id: string
+    blockNumber: number
+    timestamp: Date
+    from: string
+    to: string
+    amount: bigint
+}
+
+function getTransfers(ctx: Ctx): TransferEvent[] {
+    let transfers: TransferEvent[] = []
+    for (let block of ctx.blocks) {
+        for (let item of block.items) {
+            if (item.name == "Currencies.Transfer") {
+                let e = new CurrenciesTransferEvent(ctx, item.event)
+                let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
+                let [from, to, amount] = e.transferEventData;
+                rec = {from, to, amount};
+
+                transfers.push({
+                    id: item.event.id,
+                    blockNumber: block.header.height,
+                    timestamp: new Date(block.header.timestamp),
+                    from: ss58.codec('kusama').encode(rec.from),
+                    to: ss58.codec('kusama').encode(rec.to),
+                    amount: rec.amount,
+                })
+            }
+        }
+    }
+    return transfers
+}
+```
+* All the logic related to decoding the events / messages fetched from the `SubstrateBatchProcessor` can be housed in a different file to make the project more modular. For example, the logic associated with decoding `Currencies.Transfer` is placed in `src/types/events.ts`
+```typescript
+// events.ts
+export type AccountId = Uint8Array;
+export type Balance = BigInt;
+
+export class CurrenciesTransferEvent {
+  private readonly _chain: Chain
+  private readonly event: Event
+
+  constructor(ctx: EventContext)
+  constructor(ctx: ChainContext, event: Event)
+  constructor(ctx: EventContext, event?: Event) {
+    event = event || ctx.event
+    assert(event.name === 'Currencies.Transfer')
+    this._chain = ctx._chain
+    this.event = event
+  }
+
+  /**
+   *  Transfer succeeded (from, to, value).
+   */
+  get transferEventData(): [AccountId, AccountId, Balance] {
+    return this._chain.decodeEvent(this.event)
+  }
+
+}
+```
+* Once implementing all the processor logic is done, we can build the code and create a database table by:
+```Batchfile
+// build code
+npm run build
+// remove existing migrations
+rm -rf db/migrations/*js
+// create and apply new migration
+npx squid-typeorm-migration generate
+make migrate
+```
+### Launch the Project
+* NOTE: Laguna chain, ngrok tunnel forwarding (to expose rpc to public), and the archive must be already running. 
+* Launch the processor: `make process`
+* Lauch the GraphQL server: `make serve`
