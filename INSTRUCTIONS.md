@@ -5,7 +5,7 @@
 * Once you get the chain running, make note of the port it is running on -- by default it uses 9944.
 * Expose the RPC url (default: localhost:9944) of Laguna chain to public as subsquid archive requires access to it. For this you can download a free tool like ngrok and use it for tunnel forwarding. Once you have ngrok downloaded on your machine, run: `./ngrok http <CHAIN_PORT_NUMBER> (default: 9944)`. It returns an url like `http://<RPC_URL>`
 
-### Setting up the Archive Locally
+## Setting up the Archive Locally
 * Set the RPC endpoint in the `archive/docker-compose.yml` by replacing the existing endpoint (set to kusama by default in the subsquid-template) with `wss://<RPC_URL>`. Additionally, if you require support to index wasm-contracts, enable it in the `docker-compose.yml (under the gateway key)`. Run the archive: `docker compose -f archive/docker-compose.yml up`. The archive exposes the graphql endpoint on the port `8888` by default. 
 ```dockerfile
 // Some code above
@@ -37,14 +37,14 @@ ingest:
    // Some code below
 ```
 
-### Install Dependencies
+## Install Dependencies
 * Requisites: Node.js (16 or later), Docker
 * Install core dependencies from the root folder: `npm install && npm update`
 * Install additional dependencies (needed for wasm-indexing): `npm install @subsquid/ink-abi @subsquid/ink-typegen`
     * `subsquid/ink-abi`: required for reading and accessing the metadata of binary interface of an ink contract
     * `subsquid/ink-typegen`: responsible for generating some boilerplate code and interfaces necessary to decode event logs, smart contract functions, and executable (binary).
 
-### Setting up the Processor Locally
+## Setting up the Processor Locally
 * Once the archive is running, we can set up the processor. First step would be to define the schema of the events you want to index in the `schema.graphql` file. 
 * Change the archive source url in the `processor.ts` to point to our local Laguna Chain graphql endpoint, which by default by `http://localhost:8888/graphql`. 
 * Add all the events you want to index by adding them to the `SubstrateBatchProcessor` using the method `addEvent()`. For example, if you want to fetch the Transfer events emitted by pallet-balances (generated as `Balances` by construct_runtime!() macro). 
@@ -143,7 +143,7 @@ rm -rf db/migrations/*js
 npx squid-typeorm-migration generate
 make migrate
 ```
-### Launch the Project
+## Launch the Project
 * NOTE: Laguna chain, ngrok tunnel forwarding (to expose rpc to public), and the archive must be already running. 
 * Launch the processor: `make process`
 * Lauch the GraphQL server: `make serve`
