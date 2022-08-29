@@ -136,12 +136,16 @@ export class CurrenciesTransferEvent {
 }
 ```
 * Once implementing all the processor logic is done, we can build the code and create a database table by:
+* build code
 ```Batchfile
-// build code
 npm run build
-// remove existing migrations
+```
+   * remove existing migrations
+```Batchfile
 rm -rf db/migrations/*js
-// create and apply new migration
+```
+   * create and apply new migration
+```Batchfile
 npx squid-typeorm-migration generate
 make migrate
 ```
