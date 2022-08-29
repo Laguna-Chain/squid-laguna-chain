@@ -135,6 +135,11 @@ export class CurrenciesTransferEvent {
 
 }
 ```
+* Spin up a PostgresSQL database docker container which Squid APIs need to store the processed data in. Run: 
+```Batchfile 
+make up 
+// or alternatively, docker-compose up -d
+```
 * Once implementing all the processor logic is done, we can build the code and create a database table by:
 * build code
 ```Batchfile
