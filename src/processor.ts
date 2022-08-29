@@ -1,31 +1,26 @@
-import {lookupArchive} from "@subsquid/archive-registry"
 import * as ss58 from "@subsquid/ss58"
 import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsquid/substrate-processor"
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
-import {Account, Transfer} from "./model"
-import {BalancesTransferEvent} from "./types/events"
+import {Account, Transfer, Owner, ERC20Transfer} from "./model"
+import {CurrenciesTransferEvent} from "./types/events"
+import * as erc20 from "./erc20"
 
 
+const CONTRACT_ADDRESS = '0x5207202c27b646ceeb294ce516d4334edafbd771f869215cb070ba51dd7e2c72'
+ 
+ 
 const processor = new SubstrateBatchProcessor()
-    .setBatchSize(500)
     .setDataSource({
-        // Lookup archive by the network name in the Subsquid registry
-        archive: lookupArchive("kusama", {release: "FireSquid"})
-
-        // Use archive created by archive/docker-compose.yml
-        // archive: 'http://localhost:8888/graphql'
-    })
-    .addEvent('Balances.Transfer', {
-        data: {
-            event: {
-                args: true,
-                extrinsic: {
-                    hash: true,
-                    fee: true
-                }
-            }
-        }
+        archive: "http://localhost:8888/graphql"
+    }).
+    // .addContractsContractEmitted(CONTRACT_ADDRESS, {
+    //     data: {
+    //         event: {args: true}
+    //     }
+    // } as const).
+    addEvent("Currencies.Transfer", {
+        data: {event: {args: true}}, 
     } as const)
 
 
@@ -82,32 +77,56 @@ interface TransferEvent {
     fee?: bigint
 }
 
+interface TransferRecord {
+    id: string
+    from?: string
+    to?: string
+    amount: bigint
+    block: number
+    timestamp: Date
+}
+
+// function extractTransferRecords(ctx: Ctx): TransferRecord[] {
+//     let records: TransferRecord[] = [];
+//     for (let block of ctx.blocks) {
+//         for (let item of block.items) {
+//             if (item.name == 'Contracts.ContractEmitted' &&  item.event.args.contract == CONTRACT_ADDRESS) {
+//                 let event = erc20.decodeEvent(item.event.args.data);
+//                 if (event.__kind == 'Transfer') {
+//                     records.push({
+//                         id: item.event.id,
+//                         from: event.from && ss58.codec(5).encode(event.from),
+//                         to: event.to && ss58.codec(5).encode(event.to),
+//                         amount: event.value,
+//                         block: block.header.height,
+//                         timestamp: new Date(block.header.timestamp)
+//                     })
+//                 }
+//             }
+//         }
+//     }
+//     return records
+// }
 
 function getTransfers(ctx: Ctx): TransferEvent[] {
     let transfers: TransferEvent[] = []
     for (let block of ctx.blocks) {
         for (let item of block.items) {
-            if (item.name == "Balances.Transfer") {
-                let e = new BalancesTransferEvent(ctx, item.event)
+            if (item.name == "Currencies.Transfer") {
+                let e = new CurrenciesTransferEvent(ctx, item.event)
                 let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
-                if (e.isV1020) {
-                    let [from, to, amount,] = e.asV1020
-                    rec = {from, to, amount}
-                } else if (e.isV1050) {
-                    let [from, to, amount] = e.asV1050
-                    rec = {from, to, amount}
-                } else {
-                    rec = e.asV9130
-                }
+                let [from, to, amount] = e.transferEventData;
+                rec = {from, to, amount};
+
                 transfers.push({
                     id: item.event.id,
                     blockNumber: block.header.height,
                     timestamp: new Date(block.header.timestamp),
-                    extrinsicHash: item.event.extrinsic?.hash,
+                    // extrinsicHash: item.event.extrinsic?.hash,
                     from: ss58.codec('kusama').encode(rec.from),
                     to: ss58.codec('kusama').encode(rec.to),
                     amount: rec.amount,
-                    fee: item.event.extrinsic?.fee || 0n
+                    // fee: item.event.extrinsic?.fee || 0n
                 })
             }
         }

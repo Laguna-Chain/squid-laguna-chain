@@ -1,3 +1,19 @@
+# erc20 transfer
+type Owner @entity {
+id: ID!
+balance: BigInt!
+}
+
+type ERC20Transfer @entity {
+  id: ID!
+  from: Owner
+  to: Owner
+  amount: BigInt!
+  timestamp: DateTime!
+  block: Int!
+}
+
+# currency transfer
 type Account @entity {
   "Account address"
   id: ID!
