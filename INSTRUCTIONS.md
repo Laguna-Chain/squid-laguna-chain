@@ -8,6 +8,8 @@
 ## Setting up the Archive Locally
 * Set the RPC endpoint in the `archive/docker-compose.yml` by replacing the existing endpoint (set to kusama by default in the subsquid-template) with `wss://<RPC_URL>`. Additionally, if you require support to index wasm-contracts, enable it in the `docker-compose.yml (under the gateway key)`. Run the archive: `docker compose -f archive/docker-compose.yml up`. The archive exposes the graphql endpoint on the port `8888` by default. 
 ```dockerfile
+// archive/docker-compose.yml
+
 // Some code above
 
 ingest:
