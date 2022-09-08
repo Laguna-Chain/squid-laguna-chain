@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryGeneratedColumn, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 import {Owner} from "./owner.model"
 
@@ -27,4 +27,8 @@ export class ERC20Transfer {
 
   @Column_("int4", {nullable: false})
   block!: number
+
+  @Index_()
+  @Column_("text", {nullable: true})
+  currencyId!: string | undefined | null
 }
