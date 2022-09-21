@@ -1,6 +1,29 @@
 import { bool, _void, str, u32, Enum, Struct, Vector } from "scale-ts"
 // import { DecodedEvent } from '@polkadot/api-contract/types';
 import { Abi } from '@polkadot/api-contract';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+
+// Construct
+const testFn = async () => {
+  const wsProvider = new WsProvider('wss://laguna-chain-dev.hydrogenx.tk');
+  const api = await ApiPromise.create({ provider: wsProvider });
+
+
+  const ADDR = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+
+  // Retrieve the last timestamp
+  const now = await api.query.timestamp.now();
+  console.log("now: ", now);
+
+  const test = await api.query.tokens.accounts("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", "NativeToken")
+  console.log("test: ", test["free"].toHuman());
+
+  // console.log("api.query.tokens.accounts: ", );
+  // Retrieve the account balance & nonce via the system module
+  // const { nonce, data: balance } = await api.query.system.account(ADDR);
+
+};
+testFn()
 
 
 const erc20ABI = {
@@ -554,7 +577,7 @@ const uint8array = Uint8Array.from(Buffer.from("00000064a7b3b6e00d00000000000000
 //   0,   0,   0,  0,   0,   0])
 const decodedEvent = abi.decodeEvent(uint8array);
 // decodedEvent.event.args.map(e => e.toJSON())
-console.log(decodedEvent.args);
+// console.log(decodedEvent.args);
 // console.log("uint8array: ", uint8array);
 // console.log("decodedEvent.event.fromU8a", decodedEvent.event.fromU8a(newuint8Array ))
 // console.log("decodedEvent.args[2]", decodedEvent.args[2]);

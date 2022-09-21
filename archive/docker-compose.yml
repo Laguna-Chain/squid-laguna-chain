@@ -16,7 +16,7 @@ services:
     image: subsquid/substrate-ingest:firesquid
     command: [
         "-e",
-        "ws://host.docker.internal:9944",
+        "wss://laguna-chain-dev.hydrogenx.tk", # ws://host.docker.internal:9944
         "-c",
         "20", # allow up to 20 pending requests for the above endpoint (default is 5)
 
