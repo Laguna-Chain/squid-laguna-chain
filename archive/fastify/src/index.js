@@ -1,7 +1,8 @@
 const fastify = require('fastify')()
+require('dotenv').config()
 const DB_HOST = process.env.DB_HOST
 const DB_USER = process.env.DB_USER
-const DB_PASS = process.env.DB_PASS
+const DB_PASS = process.env.DB_PASSWORD
 const DB_NAME = process.env.DB_NAME
 const DB_PORT = process.env.DB_PORT
 
@@ -18,7 +19,7 @@ fastify.get('/unique-event-names', (req, reply) => {
   )
 })
 
-fastify.listen({ port: 3000 }, err => {
+fastify.listen({ port: 3050 }, err => {
   if (err) throw err
   console.log(`server listening on ${fastify.server.address().port}`)
 })
