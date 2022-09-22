@@ -1,5 +1,6 @@
-FROM node:alpine
-
+FROM node:17-alpine
+WORKDIR /app
 COPY . .
-EXPOSE 3000
-CMD yarn && yarn start
+RUN yarn install
+EXPOSE 3050
+CMD ["yarn", "start"]
