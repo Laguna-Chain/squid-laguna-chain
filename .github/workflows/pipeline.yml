@@ -7,7 +7,7 @@ on:
     branches: ['main']
 
 env:
-  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
   GAR_LOCATION: us
   REPOSITORY: chain-queries
   IMAGE: chain-queries
