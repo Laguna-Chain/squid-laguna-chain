@@ -3,13 +3,11 @@ import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsqu
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import {Account, Transfer, Owner, ERC20Transfer} from "./model"
-import {CurrenciesTransferEvent} from "./types/events"
+import {EventContext} from "./types/support"
 import * as erc20 from "./erc20"
 
-
 const CONTRACT_ADDRESS = '0x5207202c27b646ceeb294ce516d4334edafbd771f869215cb070ba51dd7e2c72'
- 
- 
+
 const processor = new SubstrateBatchProcessor()
     .setDataSource({
         archive: "http://localhost:8888/graphql"
@@ -19,8 +17,8 @@ const processor = new SubstrateBatchProcessor()
     //         event: {args: true}
     //     }
     // } as const).
-    addEvent("Currencies.Transfer", {
-        data: {event: {args: true}}, 
+    addEvent("Tokens.Transfer", {
+        data: {event: {args: true}},
     } as const)
 
 
@@ -110,22 +108,21 @@ interface TransferRecord {
 
 function getTransfers(ctx: Ctx): TransferEvent[] {
     let transfers: TransferEvent[] = []
+    const chain = ctx._chain;
     for (let block of ctx.blocks) {
         for (let item of block.items) {
-            if (item.name == "Currencies.Transfer") {
-                let e = new CurrenciesTransferEvent(ctx, item.event)
-                let rec: {from: Uint8Array, to: Uint8Array, amount: bigint}
-                let [from, to, amount] = e.transferEventData;
-                rec = {from, to, amount};
+            if (item.name == "Tokens.Transfer") {
+                const event = item.event || (ctx as unknown as EventContext).event;
+                let {from, to, amount}: {from: Uint8Array, to: Uint8Array, amount: bigint} = chain.decodeEvent(event)
 
                 transfers.push({
                     id: item.event.id,
                     blockNumber: block.header.height,
                     timestamp: new Date(block.header.timestamp),
                     // extrinsicHash: item.event.extrinsic?.hash,
-                    from: ss58.codec('kusama').encode(rec.from),
-                    to: ss58.codec('kusama').encode(rec.to),
-                    amount: rec.amount,
+                    from: ss58.codec('kusama').encode(from),
+                    to: ss58.codec('kusama').encode(to),
+                    amount: amount,
                     // fee: item.event.extrinsic?.fee || 0n
                 })
             }

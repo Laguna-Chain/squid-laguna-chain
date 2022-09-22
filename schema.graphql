@@ -1,7 +1,7 @@
 # erc20 transfer
 type Owner @entity {
-id: ID!
-balance: BigInt!
+  id: ID!
+  balance: BigInt!
 }
 
 type ERC20Transfer @entity {
@@ -11,6 +11,7 @@ type ERC20Transfer @entity {
   amount: BigInt!
   timestamp: DateTime!
   block: Int!
+  currencyId: String @index
 }
 
 # currency transfer
