@@ -23,7 +23,7 @@ fastify.get('/unique-event-names', (req, reply) => {
   })
 })
 
-fastify.listen({ port: 3050 }, (err) => {
+fastify.listen({ port: 3050, host: '::' }, (err) => {
   if (err) {
     console.error(err)
     process.exit(1)
