@@ -29,11 +29,14 @@ jobs:
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0'
         with:
+          token_format: 'access_token'
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: Docker configuration
-        run: |-
-          docker login -u oauth2accesstoken -p ${{steps.auth.outputs.access_token}} https://$GAR_LOCATION-docker.pkg.dev
+      - uses: 'docker/login-action@v1'
+        with:
+          registry: '$GAR_LOCATION-docker.pkg.dev'
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
 
       # Build the Docker image
       - name: Build
