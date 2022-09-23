@@ -54,6 +54,13 @@ services:
       - '3050:3050'
     networks:
       - squid-archive
+  chain-processor:
+    image: 'us-docker.pkg.dev/laguna-chain/laguna-chain/chain-processor:latest'
+    container_name: chain-processor
+    ports:
+      - '3001:3001'
+    networks:
+      - squid-archive
 networks:
   squid-archive:
     name: squid-archive
