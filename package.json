@@ -7,8 +7,8 @@
   "scripts": {
     "build": "rm -rf lib && tsc",
     "db:migrate": "npx squid-typeorm-migration apply",
-    "processor:start": "node lib/processor.js",
-    "query-node:start": "squid-graphql-server --subscriptions"
+    "processor:start": "node -r dotenv/config lib/processor.js",
+    "query-node:start": "npx squid-graphql-server --subscriptions"
   },
   "dependencies": {
     "@subsquid/archive-registry": "1.0.10",

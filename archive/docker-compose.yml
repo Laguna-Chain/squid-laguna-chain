@@ -57,8 +57,21 @@ services:
   chain-processor:
     image: 'us-docker.pkg.dev/laguna-chain/laguna-chain/chain-processor:latest'
     container_name: chain-processor
+    command:
+      - 'yarn'
+      - 'processor:start'
     ports:
       - '3001:3001'
+    networks:
+      - squid-archive
+  chain-processed-graphql:
+    image: 'us-docker.pkg.dev/laguna-chain/laguna-chain/chain-processor:latest'
+    container_name: chain-processed-graphql
+    command:
+      - 'yarn'
+      - 'query-node:start'
+    ports:
+      - '4350:4350'
     networks:
       - squid-archive
 networks:

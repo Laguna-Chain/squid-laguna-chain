@@ -8,4 +8,6 @@ ADD tsconfig.json .
 ADD typegen.json .
 RUN npm ci
 RUN npm run build
-CMD ["node", "-r", "dotenv/config", "lib/processor.js"]
+EXPOSE 3050
+EXPOSE 4350
+CMD ["/bin/sh"]
