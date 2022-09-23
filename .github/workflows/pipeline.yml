@@ -9,8 +9,9 @@ on:
 env:
   PROJECT_ID: ${{ secrets.PROJECT_ID }}
   GAR_LOCATION: us
-  REPOSITORY: chain-queries
+  QUERIES_REPOSITORY: chain-queries
   QUERIES_IMAGE: chain-queries
+  PROCESSOR_REPOSITORY: chain-processor
   PROCESSOR_IMAGE: chain-processor
 
 jobs:
@@ -42,18 +43,18 @@ jobs:
       # Build the Docker image
       - name: Build chain-queries
         run: |-
-          cd archive/fastify && docker build -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.QUERIES_IMAGE }}:${{ github.sha }} .
-          docker tag ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.QUERIES_IMAGE }}:${{ github.sha }} ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.QUERIES_IMAGE }}:latest
+          cd archive/fastify && docker build -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.QUERIES_REPOSITORY }}/${{ env.QUERIES_IMAGE }}:${{ github.sha }} .
+          docker tag ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.QUERIES_REPOSITORY }}/${{ env.QUERIES_IMAGE }}:${{ github.sha }} ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.QUERIES_REPOSITORY }}/${{ env.QUERIES_IMAGE }}:latest
       - name: Build chain-processor
         run: |-
-          docker build -f processor.Dockerfile -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:${{ github.sha }} .
-          docker tag ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:${{ github.sha }} ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:latest
+          docker build -f processor.Dockerfile -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.PROCESSOR_REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:${{ github.sha }} .
+          docker tag ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.PROCESSOR_REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:${{ github.sha }} ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.PROCESSOR_REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:latest
       # Push the Docker image to Google Artifact Registry
       - name: Publish chain-queries
         run: |-
-          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.QUERIES_IMAGE }}:${{ github.sha }}
-          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.QUERIES_IMAGE }}:latest
+          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.QUERIES_REPOSITORY }}/${{ env.QUERIES_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.QUERIES_REPOSITORY }}/${{ env.QUERIES_IMAGE }}:latest
       - name: Publish chain-processor
         run: |-
-          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:${{ github.sha }}
-          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:latest
+          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.PROCESSOR_REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.PROCESSOR_REPOSITORY }}/${{ env.PROCESSOR_IMAGE }}:latest

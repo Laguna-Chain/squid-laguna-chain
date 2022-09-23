@@ -14,7 +14,7 @@ const CONTRACT_ADDRESS = '0x5207202c27b646ceeb294ce516d4334edafbd771f869215cb070
 
 const processor = new SubstrateBatchProcessor()
   .setDataSource({
-    archive: 'http://gateway:8000/graphql',
+    archive: process.env.ARCHIVE_URL as string,
   })
   // .addContractsContractEmitted(CONTRACT_ADDRESS, {
   //     data: {
