@@ -6,11 +6,14 @@ import {
 } from '@subsquid/substrate-processor'
 import { Store, TypeormDatabase } from '@subsquid/typeorm-store'
 import { In } from 'typeorm'
-import { Account, Transfer, Owner, ERC20Transfer } from './model'
+import { Account, Transfer, Owner, ERC20Transfer, EthBlock, EthTransaction } from './model'
 import { EventContext } from './types/support'
 import * as erc20 from './erc20'
+import Web3 from "web3";
 
 const CONTRACT_ADDRESS = '0x5207202c27b646ceeb294ce516d4334edafbd771f869215cb070ba51dd7e2c72'
+
+const web3 = new Web3('wss://laguna-chain-dev.hydrogenx.live');
 
 const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -65,6 +68,18 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
   await ctx.store.save(Array.from(accounts.values()))
   await ctx.store.insert(transfers)
+
+  for (let b of ctx.blocks) {
+    try {
+        let block = await web3.eth.getBlock(b.header.hash, true) as unknown as EthBlock;
+        if (!block) continue;
+        const transactions = block.transactions as EthTransaction[];
+        await ctx.store.insert(block);
+        await ctx.store.insert(transactions);
+    } catch (e) {
+        console.error(e);
+    }
+  }
 })
 
 interface TransferEvent {

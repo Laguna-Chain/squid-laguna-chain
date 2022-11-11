@@ -1,12 +1,13 @@
-module.exports = class Data1661419712713 {
-  name = 'Data1661419712713'
+module.exports = class Data1668161746711 {
+  name = 'Data1668161746711'
 
   async up(db) {
     await db.query(`CREATE TABLE "owner" ("id" character varying NOT NULL, "balance" numeric NOT NULL, CONSTRAINT "PK_8e86b6b9f94aece7d12d465dc0c" PRIMARY KEY ("id"))`)
-    await db.query(`CREATE TABLE "erc20_transfer" ("id" character varying NOT NULL, "amount" numeric NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "block" integer NOT NULL, "from_id" character varying, "to_id" character varying, "currencyId" character varying, CONSTRAINT "PK_12764843146818a31e3d28fc577" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "erc20_transfer" ("id" character varying NOT NULL, "amount" numeric NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "block" integer NOT NULL, "currency_id" text, "from_id" character varying, "to_id" character varying, CONSTRAINT "PK_12764843146818a31e3d28fc577" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_6a4b4e1e5a3fcbf51e5551db77" ON "erc20_transfer" ("from_id") `)
     await db.query(`CREATE INDEX "IDX_615b03efae5f07f091e324c1d8" ON "erc20_transfer" ("to_id") `)
-    await db.query(`CREATE TABLE "transfer" ("id" character varying NOT NULL, "block_number" integer NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "extrinsic_hash" text, "amount" numeric NOT NULL, "fee" numeric, "from_id" character varying, "to_id" character varying, CONSTRAINT "PK_fd9ddbdd49a17afcbe014401295" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE INDEX "IDX_0c4a373af5591e0c322d6dbf66" ON "erc20_transfer" ("currency_id") `)
+    await db.query(`CREATE TABLE "transfer" ("id" character varying NOT NULL, "block_number" integer NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "extrinsic_hash" text, "amount" numeric NOT NULL, "fee" numeric NOT NULL, "from_id" character varying, "to_id" character varying, CONSTRAINT "PK_fd9ddbdd49a17afcbe014401295" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_d6624eacc30144ea97915fe846" ON "transfer" ("block_number") `)
     await db.query(`CREATE INDEX "IDX_70ff8b624c3118ac3a4862d22c" ON "transfer" ("timestamp") `)
     await db.query(`CREATE INDEX "IDX_070c555a86b0b41a534a55a659" ON "transfer" ("extrinsic_hash") `)
@@ -14,10 +15,14 @@ module.exports = class Data1661419712713 {
     await db.query(`CREATE INDEX "IDX_0751309c66e97eac9ef1149362" ON "transfer" ("to_id") `)
     await db.query(`CREATE INDEX "IDX_f4007436c1b546ede08a4fd7ab" ON "transfer" ("amount") `)
     await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "eth_block" ("id" character varying NOT NULL, "number" integer, "hash" text, "parent_hash" text NOT NULL, "base_fee_per_gas" integer, "nonce" text, "sha3_uncles" text NOT NULL, "logs_bloom" text, "transactions_root" text NOT NULL, "state_root" text, "miner" text, "difficulty" text, "total_difficulty" text, "extra_data" text, "size" integer, "gas_limit" integer, "gas_used" integer, "timestamp" integer, "uncles" text array, CONSTRAINT "PK_e4e28efda982624b32698933bae" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "eth_transaction" ("id" character varying NOT NULL, "hash" text NOT NULL, "nonce" integer NOT NULL, "block_hash" text, "transaction_index" integer, "from" text NOT NULL, "to" text NOT NULL, "value" text, "gas_price" text, "gas" integer, "input" text, "block_number_id" character varying, CONSTRAINT "PK_a4ee1ee7b397779b07d27f9d286" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE INDEX "IDX_cc8837caa388b30dc5ff9a59b1" ON "eth_transaction" ("block_number_id") `)
     await db.query(`ALTER TABLE "erc20_transfer" ADD CONSTRAINT "FK_6a4b4e1e5a3fcbf51e5551db775" FOREIGN KEY ("from_id") REFERENCES "owner"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "erc20_transfer" ADD CONSTRAINT "FK_615b03efae5f07f091e324c1d87" FOREIGN KEY ("to_id") REFERENCES "owner"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "transfer" ADD CONSTRAINT "FK_76bdfed1a7eb27c6d8ecbb73496" FOREIGN KEY ("from_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "transfer" ADD CONSTRAINT "FK_0751309c66e97eac9ef11493623" FOREIGN KEY ("to_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "eth_transaction" ADD CONSTRAINT "FK_cc8837caa388b30dc5ff9a59b1c" FOREIGN KEY ("block_number_id") REFERENCES "eth_block"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
   }
 
   async down(db) {
@@ -25,6 +30,7 @@ module.exports = class Data1661419712713 {
     await db.query(`DROP TABLE "erc20_transfer"`)
     await db.query(`DROP INDEX "public"."IDX_6a4b4e1e5a3fcbf51e5551db77"`)
     await db.query(`DROP INDEX "public"."IDX_615b03efae5f07f091e324c1d8"`)
+    await db.query(`DROP INDEX "public"."IDX_0c4a373af5591e0c322d6dbf66"`)
     await db.query(`DROP TABLE "transfer"`)
     await db.query(`DROP INDEX "public"."IDX_d6624eacc30144ea97915fe846"`)
     await db.query(`DROP INDEX "public"."IDX_70ff8b624c3118ac3a4862d22c"`)
@@ -33,9 +39,13 @@ module.exports = class Data1661419712713 {
     await db.query(`DROP INDEX "public"."IDX_0751309c66e97eac9ef1149362"`)
     await db.query(`DROP INDEX "public"."IDX_f4007436c1b546ede08a4fd7ab"`)
     await db.query(`DROP TABLE "account"`)
+    await db.query(`DROP TABLE "eth_block"`)
+    await db.query(`DROP TABLE "eth_transaction"`)
+    await db.query(`DROP INDEX "public"."IDX_cc8837caa388b30dc5ff9a59b1"`)
     await db.query(`ALTER TABLE "erc20_transfer" DROP CONSTRAINT "FK_6a4b4e1e5a3fcbf51e5551db775"`)
     await db.query(`ALTER TABLE "erc20_transfer" DROP CONSTRAINT "FK_615b03efae5f07f091e324c1d87"`)
     await db.query(`ALTER TABLE "transfer" DROP CONSTRAINT "FK_76bdfed1a7eb27c6d8ecbb73496"`)
     await db.query(`ALTER TABLE "transfer" DROP CONSTRAINT "FK_0751309c66e97eac9ef11493623"`)
+    await db.query(`ALTER TABLE "eth_transaction" DROP CONSTRAINT "FK_cc8837caa388b30dc5ff9a59b1c"`)
   }
 }
